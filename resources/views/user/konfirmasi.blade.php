@@ -150,6 +150,17 @@
             opacity: 0.7;
             cursor: not-allowed;
         }
+        .catatan-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-family: Arial, sans-serif;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            box-sizing: border-box;
+            resize: vertical;
+        }
     </style>
 </head>
 <body>
@@ -199,6 +210,16 @@
                 <p>Nama Pemesan: {{ $namaPemesan }}</p>
                 <p>Nomor Meja : {{ $nomorMeja == 0 ? '??' : $nomorMeja }}</p>
             </div>
+
+            <div class="divider"></div>
+
+            <h3 class="section-title">Catatan Pesanan (Opsional)</h3>
+            <textarea 
+                name="catatan" 
+                class="catatan-textarea" 
+                rows="3" 
+                placeholder="Contoh: Ayam geprek 1 tidak pedas, 1 pedas sedang."
+            ></textarea>
 
             <div class="divider"></div>
 

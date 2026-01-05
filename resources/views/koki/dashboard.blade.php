@@ -12,9 +12,12 @@
     .order-card {
         border: 1px solid #ddd;
         border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         overflow: hidden;
         background-color: #fff;
+        /* --- KUNCI: Menjaga tinggi kartu seragam dan tombol di bawah --- */
+        display: flex;
+        flex-direction: column;
     }
     .order-header {
         padding: 1rem;
@@ -26,7 +29,13 @@
     }
     .order-header p { margin: 0; font-size: 0.95rem; }
     .order-header p strong { color: #333; }
-    .order-body { padding: 1rem; }
+    
+    .order-body { 
+        padding: 1rem; 
+        /* --- KUNCI: Body mengambil sisa ruang agar footer terdorong ke bawah --- */
+        flex-grow: 1; 
+    }
+    
     .order-table {
         width: 100%;
         border-collapse: collapse;
@@ -38,26 +47,27 @@
         border-bottom: 1px solid #eee;
     }
     .order-table th { background-color: #B91C1C; color: white; }
-    /* Atur lebar kolom: Menu lebih lebar */
     .order-table th:nth-child(1), .order-table td:nth-child(1) { width: 70%; text-align: left; } 
     .order-table th:nth-child(2), .order-table td:nth-child(2) { width: 30%; } 
 
+    /* --- FOOTER: Sekarang berada di dalam order-card --- */
     .order-footer {
-        padding: 0 1rem 1rem 1rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        padding: 1rem;
+        border-top: 1px solid #eee;
+        background-color: #fcfcfc;
+        margin-top: auto; /* Memastikan nempel di bawah */
     }
     .btn-selesai {
         background-color: #16A34A;
         color: white;
         border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
+        padding: 12px 20px;
+        border-radius: 6px;
         font-weight: bold;
         cursor: pointer;
         width: 100%;
         font-size: 1rem;
+        transition: 0.3s;
     }
     .btn-selesai:hover { background-color: #15803D; }
     .no-orders { text-align: center; padding: 2rem; color: #777; }
@@ -73,9 +83,9 @@
                 <div class="order-card">
                     <div class="order-header">
                         <p><strong>{{ $transaksi->nama_pemesan }}</strong></p>
-                        <p><strong>Meja {{ $transaksi->nomor_meja }}</strong></p>
+                        <p><strong>Meja {{ $transaksi->nomor_meja == 0 ? '??' : $transaksi->nomor_meja }}</strong></p>
                         <p>#{{ $transaksi->id }}</p>
-                        <div>
+                        <div style="text-align: right;">
                             <p>{{ $transaksi->updated_at->format('H:i') }} WIB</p>
                             <small style="color: #d32f2f; font-weight: bold;">{{ $transaksi->updated_at->diffForHumans() }}</small>
                         </div>
@@ -98,10 +108,19 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        
+                        @if($transaksi->catatan)
+                        <div style="margin-top: 10px;">
+                            <p style="margin: 0 0 5px 0; font-size: 0.95rem;"><strong>Catatan Pesanan:</strong></p>
+                            <p style="margin: 0; font-size: 0.95rem; background-color: #FEF3C7; padding: 10px; border-radius: 4px; border-left: 4px solid #F59E0B; white-space: normal; word-wrap: break-word;">
+                                {{ $transaksi->catatan }}
+                            </p>
+                        </div>
+                        @endif
                     </div>
 
                     <div class="order-footer">
-                        <form action="{{ route('koki.selesai', $transaksi->id) }}" method="POST" onsubmit="return confirm('Pesanan sudah selesai dimasak?')" style="width: 100%;">
+                        <form action="{{ route('koki.selesai', $transaksi->id) }}" method="POST" onsubmit="return confirm('Pesanan sudah selesai dimasak?')" style="width: 100%; margin: 0;">
                             @csrf
                             @method('PATCH')
                             <button type="submit" class="btn-selesai">
@@ -109,7 +128,7 @@
                             </button>
                         </form>
                     </div>
-                </div>
+                </div> 
             @endforeach
         </div>
     @endif

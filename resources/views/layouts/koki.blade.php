@@ -6,7 +6,7 @@
     <title>@yield('title', 'Koki Dashboard') - Gerai 3 Abdul</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
-        .admin-wrapper { display: flex; min-height: 100vh; }
+        .admin-wrapper { display: flex; min-height: 100vh; align-items: flex-start; }
         .sidebar {
             width: 260px; background-color: #B91C1C; /* Merah untuk Koki */
             color: white; display: flex; flex-direction: column;

@@ -84,6 +84,7 @@ class PesananController extends Controller
             'nomor_meja' => 'required|integer', 
             'metode_pembayaran' => 'required|string|in:CASH,MIDTRANS',
             'cart_data' => 'required',
+            'catatan' => 'nullable|string',
         ]);
 
         $cartItems = json_decode($request->cart_data, true);
@@ -99,6 +100,7 @@ class PesananController extends Controller
                 'total_harga' => $request->total_harga,
                 'metode_pembayaran' => $request->metode_pembayaran,
                 'status' => 'menunggu_pembayaran',
+                'catatan' => $request->catatan,
             ]);
 
             foreach ($cartItems as $item) {

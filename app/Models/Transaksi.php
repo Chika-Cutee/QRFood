@@ -17,6 +17,7 @@ class Transaksi extends Model
         'total_harga',
         'metode_pembayaran',
         'status',
+        'catatan',
     ];
 
     /**

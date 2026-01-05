@@ -15,6 +15,8 @@
         border-radius: 8px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         overflow: hidden;
+        display: flex; /* Aktifkan flexbox */
+        flex-direction: column; /* Susun item secara vertikal */
     }
     .order-header {
         padding: 1rem;
@@ -26,7 +28,10 @@
     }
     .order-header p { margin: 0; font-size: 0.95rem; }
     .order-header p strong { color: #333; }
-    .order-body { padding: 1rem; }
+    .order-body { 
+        padding: 1rem; 
+        flex-grow: 1; /* Biarkan body tumbuh dan mendorong footer */
+    }
     .order-table {
         width: 100%;
         border-collapse: collapse;
@@ -52,10 +57,12 @@
     }
 
     .order-footer {
-        padding: 0 1rem 1rem 1rem;
+        padding: 1rem; /* Ubah padding agar konsisten */
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-top: 1px solid #eee; /* Tambah garis pemisah */
+        background-color: #f9f9f9;
     }
     .btn-konfirmasi {
         background-color: #B91C1C;
@@ -146,6 +153,13 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    @if($transaksi->catatan)
+                    <div style="padding: 0 1rem 1rem; margin-top: -1rem;">
+                        <p style="margin: 0; font-size: 0.95rem;"><strong>Catatan Pesanan:</strong></p>
+                        <p style="margin: 0; font-size: 0.95rem; white-space: normal; word-wrap: break-word;">{{ $transaksi->catatan }}</p>
+                    </div>
+                    @endif
                 </div>
                 <div class="order-footer">
                     
