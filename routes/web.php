@@ -148,5 +148,5 @@ Route::middleware('auth:web')->group(function () {
      // Route Group untuk Koki
      Route::prefix('koki')->name('koki.')->middleware('auth:koki')->group(function () {
      Route::get('/dashboard', [KokiDashboardController::class, 'index'])->name('dashboard');
-     Route::patch('/pesanan/{transaksi}/selesai', [KokiDashboardController::class, 'tandaiSelesai'])->name('selesai');
+     Route::patch('/pesanan/{transaksi}/selesai', [KokiDashboardController::class, 'tandaiSelesai'])->name('selesaie');
 });
