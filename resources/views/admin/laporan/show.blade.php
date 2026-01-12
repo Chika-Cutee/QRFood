@@ -129,5 +129,4 @@
         <!-- Tombol Kembali -->
         <a href="{{ route('admin.laporan.index') }}" class="btn-action btn-kembali">Kembali</a>
     </div>
-
 @endsection

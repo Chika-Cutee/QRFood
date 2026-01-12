@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Kasir Dashboard') - Gerai 3 Abdul</title>
     <style>
         body {
@@ -10,32 +11,37 @@
             background-color: #f0f2f5;
             margin: 0;
             padding: 0;
+            overflow-x: hidden; /* Mencegah scroll horizontal */
         }
         .admin-wrapper {
             display: flex;
             min-height: 100vh;
         }
+        
+        /* Sidebar */
         .sidebar {
             width: 260px;
-            background-color: #B91C1C;
+            background-color: #B91C1C; /* Merah pekat */
             color: white;
             display: flex;
-            flex-direction: column; 
-            min-height: 100vh; /* Setinggi viewport */
-            
-            /* --- PERBAIKAN PENTING --- */
-            position: fixed; /* Kunci sidebar di tempatnya */
+            flex-direction: column;
+            position: fixed; /* Fix sidebar position */
             top: 0;
             left: 0;
-            z-index: 1000; /* Pastikan di atas konten lain */
-            /* -------------------------- */
+            height: 100vh;
+            z-index: 1000;
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%);
+        }
+        .sidebar.open {
+            transform: translateX(0);
         }
         .sidebar-header {
             padding: 1rem;
             display: flex;
             align-items: center;
             gap: 10px;
-            background-color: #B91C1C;
+            background-color: #B91C1C; 
         }
         .sidebar-header img {
             width: 50px;
@@ -46,14 +52,16 @@
             margin: 0;
             font-size: 1.2rem;
         }
+        
+        /* Navigasi */
         .sidebar-nav {
-            flex: 1; 
+            flex: 1; /* Memenuhi sisa ruang */
         }
         .nav-heading {
             padding: 1.25rem 1.5rem;
             font-size: 1.1rem;
             font-weight: 600;
-            background-color: #000; 
+            background-color: #000; /* Hitam */
             color: white;
             border-bottom: 1px solid #991B1B;
         }
@@ -71,9 +79,11 @@
         .sidebar-nav a.active {
             background-color: #991B1B; /* Merah lebih gelap */
         }
+        
+        /* Tombol Keluar */
         .sidebar-footer {
             padding: 1rem;
-            margin-top: auto; /* KUNCI SOLUSI: Mendorong footer ke batas bawah */
+            margin-top: auto;
         }
         .btn-logout {
             width: 100%;
@@ -86,32 +96,70 @@
             font-weight: bold;
             cursor: pointer;
         }
+        .btn-logout:hover {
+            background-color: #555;
+        }
+
+        /* Konten Utama */
         .main-content {
-            flex: 1; 
-            padding: 2rem;
-            /* --- PERBAIKAN PENTING --- */
-            margin-left: 260px;
+            flex: 1;
+            transition: margin-left 0.3s ease-in-out;
+            overflow-x: hidden; /* Paksa agar tidak ada scroll horizontal */
+            padding: 0;
         }
         .content-header {
-            font-size: 1.75rem;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 1rem;
+            display: none;
         }
         .content-body {
             background-color: white;
             padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        /* Responsive Styles */
+        .mobile-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+        #hamburger-btn {
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .mobile-header-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        .overlay.active {
+            display: block;
         }
     </style>
     @stack('styles')
 </head>
 <body>
+    <div class="overlay" id="overlay"></div>
     <div class="admin-wrapper">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <img src="{{ asset('images/cafe.jpg') }}" alt="Logo">
                 <h2>Cafe Gerai 3 Abdul</h2>
@@ -142,6 +190,10 @@
         </aside>
 
         <main class="main-content">
+            <header class="mobile-header">
+                <button id="hamburger-btn">&#9776;</button>
+                <div class="mobile-header-title">@yield('header_title')</div>
+            </header>
             <h1 class="content-header">
                 @yield('header_title') </h1>
             <div class="content-body">
@@ -149,6 +201,28 @@
             </div>
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const hamburgerBtn = document.getElementById('hamburger-btn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+
+            hamburgerBtn.addEventListener('click', function () {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            });
+
+            overlay.addEventListener('click', function () {
+                closeSidebar();
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 </html>

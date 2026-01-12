@@ -50,6 +50,23 @@
         margin-top: 0.25rem;
         padding-left: 120px; /* Sejajar dengan input */
     }
+
+    @media (max-width: 480px) {
+        .form-group {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .form-label {
+            width: auto;
+            margin-bottom: 0.5rem;
+        }
+        .error-message {
+            padding-left: 0;
+        }
+        .form-container {
+            padding: 1rem;
+        }
+    }
 </style>
 @endpush
 

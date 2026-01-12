@@ -6,9 +6,15 @@
 @push('styles')
 <style>
     .grid-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+        /* display: grid; Dihapus dari sini agar defaultnya block (satu kolom) */
         gap: 1.5rem;
+    }
+    /* Terapkan grid hanya pada layar yang lebih lebar */
+    @media (min-width: 500px) {
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+        }
     }
     .order-card {
         border: 1px solid #ddd;
@@ -67,27 +73,33 @@
         color: #777;
     }
     
-    /* Layout Search Bar & Tombol Hapus Semua */
+    /* PERBAIKAN SEARCH CONTAINER */
     .search-container {
         display: flex;
-        justify-content: space-between; /* Jarak antara form cari dan tombol hapus */
+        flex-wrap: wrap; /* Agar tombol hapus pindah ke bawah jika tidak muat */
+        gap: 1rem;
+        justify-content: space-between;
         align-items: center;
         margin-bottom: 1.5rem;
         background-color: #f0f0f0;
         padding: 1rem;
         border-radius: 8px;
     }
+
     .search-form {
         display: flex;
         gap: 10px;
-        flex: 1; /* Agar form cari mengambil sisa ruang */
+        flex: 1;
+        min-width: 280px; /* Mencegah input terlalu kecil */
     }
+
     .search-input {
         flex: 1;
         padding: 10px;
         border: 1px solid #BDBDBD;
         border-radius: 8px;
         font-size: 1rem;
+        min-width: 0; /* Penting untuk flex-item */
     }
     .search-btn {
         padding: 10px 15px;
@@ -129,6 +141,19 @@
     }
     .btn-hapus-item:hover {
         background-color: #991B1B;
+    }
+
+    /* Media query untuk search container */
+    @media (max-width: 600px) {
+        .search-container {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        .btn-hapus-semua {
+            margin-left: 0;
+            text-align: center;
+        }
     }
 </style>
 @endpush
@@ -180,7 +205,8 @@
                     <p>Metode: <strong>{{ $transaksi->metode_pembayaran }}</strong></p>
                 </div>
                 <div class="order-body">
-                    <table class="order-table">
+                    <div style="overflow-x: auto; width: 100%;">
+                        <table class="order-table">
                         <thead>
                             <tr>
                                 <th>Menu</th>
@@ -206,6 +232,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    </div>
 
                     @if($transaksi->catatan)
                     <div style="padding: 0 1rem 1rem; margin-top: -1rem;">

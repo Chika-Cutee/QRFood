@@ -86,6 +86,10 @@
         margin-bottom: 1.5rem;
         display: inline-block;
     }
+    .table-wrapper {
+        overflow-x: auto;
+        width: 100%;
+    }
 </style>
 @endpush
 
@@ -107,6 +111,7 @@
 
         {{-- ======================= MAKANAN ======================= --}}
         <div id="makanan" class="tab-content active">
+        <div class="table-wrapper">
             <table class="menu-table">
                 <thead>
                     <tr>
@@ -139,9 +144,11 @@
                 </tbody>
             </table>
         </div>
+        </div>
 
         {{-- ======================= MINUMAN ======================= --}}
         <div id="minuman" class="tab-content">
+        <div class="table-wrapper">
             <table class="menu-table">
                 <thead>
                     <tr>
@@ -174,9 +181,11 @@
                 </tbody>
             </table>
         </div>
+        </div>
 
         {{-- ======================= PAKET ======================= --}}
         <div id="paket" class="tab-content">
+        <div class="table-wrapper">
             <table class="menu-table">
                 <thead>
                     <tr>
@@ -208,6 +217,7 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
         </div>
     </div>
 @endsection

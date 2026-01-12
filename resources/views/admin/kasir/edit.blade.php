@@ -12,6 +12,23 @@
     .btn-submit { background-color: #B91C1C; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-size: 1rem; font-weight: bold; cursor: pointer; display: block; margin-left: auto; }
     .input-error { border-color: #DC2626; }
     .error-message { color: #DC2626; font-size: 0.9rem; margin-top: 0.25rem; padding-left: 120px; }
+
+    @media (max-width: 480px) {
+        .form-group {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .form-label {
+            width: auto;
+            margin-bottom: 0.5rem;
+        }
+        .error-message {
+            padding-left: 0;
+        }
+        .form-container {
+            padding: 1rem;
+        }
+    }
 </style>
 @endpush
 

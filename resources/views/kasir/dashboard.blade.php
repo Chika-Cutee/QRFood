@@ -6,9 +6,15 @@
 @push('styles')
 <style>
     .grid-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+        /* display: grid; Dihapus agar default satu kolom */
         gap: 1.5rem;
+    }
+    /* Terapkan grid hanya di layar lebar */
+    @media (min-width: 500px) {
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+        }
     }
     .order-card {
         border: 1px solid #ddd;
@@ -127,7 +133,8 @@
                     </p>
                 </div>
                 <div class="order-body">
-                    <table class="order-table">
+                    <div style="overflow-x: auto; width: 100%;">
+                        <table class="order-table">
                         <thead>
                             <tr>
                                 <th>Menu</th>
@@ -153,6 +160,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    </div>
 
                     @if($transaksi->catatan)
                     <div style="padding: 0 1rem 1rem; margin-top: -1rem;">
