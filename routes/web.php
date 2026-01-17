@@ -13,15 +13,20 @@ use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Koki\DashboardController as KokiDashboardController;
 
 
-// Rute Khusus untuk melihat Landing Page
-Route::get('/landingpage', function () {
+// Rute utama untuk menampilkan Landing Page
+Route::get('/', function () {
     return view('landing-page');
-});
+})->name('landing.index');
+
 
 // Rute untuk Tamu (Guest) - (Login & Register)
 Route::middleware('guest')->group(function () {
-    Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->name('login.post');
+
+    // Rute untuk Login Staff
+    Route::get('/login/staff', [LoginController::class, 'showStaffLoginForm'])->name('login.staff');
+    Route::post('/login/staff', [LoginController::class, 'staffLogin'])->name('login.staff.post');
     
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
     Route::post('/register', [RegisterController::class, 'register'])->name('register.post');

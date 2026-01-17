@@ -58,8 +58,8 @@
                 </span>
                 
                 <span>
-                    <!-- Tampilkan tanggal format Indonesia -->
-                    {{ \Carbon\Carbon::parse($laporan->tanggal)->format('d-m-Y') }}
+                    <!-- Tampilkan hari dan tanggal format Indonesia -->
+                    {{ \Carbon\Carbon::parse($laporan->tanggal)->locale('id')->translatedFormat('l, d-m-Y') }}
                 </span>
             </a>
         @empty

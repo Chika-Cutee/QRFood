@@ -986,7 +986,8 @@
             </div>
             <center><h1 ><p style="margin-top: 0.5rem; color: #A8201A;">#Scan To Order</h1></center>
             <!-- Tambahkan tombol Login disini -->
-           <!-- <a href="{{ route('login') }}" class="nav-btn" style="text-decoration: none;">Login</a> -->
+           <!-- <a href="{{ route('login') }}" class="nav-btn" style="text-decoration: none;">Login Staf</a> -->
+        </nav>
     </header>
 
     <!-- Hero Section -->
