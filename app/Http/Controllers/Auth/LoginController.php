@@ -21,13 +21,29 @@ class LoginController extends Controller
      */
     private function buatKredensial(Request $request): array
     {
-        $loginInput = $request->input('email');
-        $field      = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+        $loginInput = (string) $request->input('email');
 
         return [
-            $field     => $loginInput,
+            $this->tentukanFieldLogin($loginInput) === 'email' ? 'email' : 'name' => $loginInput,
             'password' => $request->input('password'),
         ];
+    }
+
+    /**
+     * Menentukan kolom login: 'email' bila format email valid, 'name' (username) bila bukan,
+     * dan "Error" bila input kosong.
+     */
+    public function tentukanFieldLogin(string $input)
+    {
+        if (trim($input) === '') {
+            $hasil = 'Error';
+        } elseif (filter_var($input, FILTER_VALIDATE_EMAIL)) {
+            $hasil = 'email';
+        } else {
+            $hasil = 'name';
+        }
+
+        return $hasil;
     }
 
     // Method untuk menampilkan form login staff

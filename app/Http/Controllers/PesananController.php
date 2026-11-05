@@ -32,8 +32,8 @@ class PesananController extends Controller
 
         $produks = Produk::whereIn('id', array_keys($cartData))->get();
 
-        $items      = [];
-        $totalHarga = 0;
+        $items = [];
+        $baris = [];
 
         foreach ($produks as $produk) {
             // [Pencegahan Cacat] jumlah dipaksa integer agar perhitungan harga tidak
@@ -44,7 +44,7 @@ class PesananController extends Controller
                 // [Komputasional] satu pernyataan sederhana + integer (tanpa floating point).
                 $harga    = (int) $produk->price;
                 $subtotal = $harga * $jumlah;
-                $totalHarga += $subtotal;
+                $baris[]  = ['harga' => $harga, 'jumlah' => $jumlah];
 
                 $items[] = (object) [
                     'produk' => [
@@ -63,6 +63,12 @@ class PesananController extends Controller
             return redirect()->route('user.dashboard')->with('error', 'Keranjang kosong.');
         }
 
+        $totalHarga = $this->kalkulasiTotalBelanja($baris);
+
+        if (!is_int($totalHarga)) {
+            return redirect()->route('user.dashboard')->with('error', $totalHarga);
+        }
+
         $request->session()->put('konfirmasi_data', [
             'items'       => $items,
             'totalHarga'  => $totalHarga,
@@ -72,6 +78,42 @@ class PesananController extends Controller
         ]);
 
         return redirect()->route('pesanan.konfirmasi.show');
+    }
+
+    /**
+     * Menghitung total belanja dari daftar ['harga' => .., 'jumlah' => ..].
+     * Mengembalikan int (total) atau string pesan "Error: ..." bila data tidak valid.
+     * [Pencegahan Cacat] Semua data divalidasi dulu (lengkap, angka, tidak minus),
+     * lalu dihitung dengan bilangan bulat.
+     */
+    public function kalkulasiTotalBelanja(array $items)
+    {
+        if (empty($items)) {
+            return 'Error: Keranjang Kosong';
+        }
+
+        $total = 0;
+
+        foreach ($items as $item) {
+            if (!isset($item['harga'], $item['jumlah'])) {
+                return 'Error: Data tidak lengkap';
+            }
+
+            if (!is_numeric($item['harga']) || !is_numeric($item['jumlah'])) {
+                return 'Error: Input harus berupa angka';
+            }
+
+            $harga  = (int) $item['harga'];
+            $jumlah = (int) $item['jumlah'];
+
+            if ($harga < 0 || $jumlah < 0) {
+                return 'Error: Nilai tidak boleh minus';
+            }
+
+            $total += $harga * $jumlah;
+        }
+
+        return $total;
     }
 
     public function showKonfirmasi(Request $request)
