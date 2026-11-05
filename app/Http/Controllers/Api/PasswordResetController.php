@@ -24,7 +24,7 @@ class PasswordResetController extends Controller
         }
 
         // Buat OTP
-        $otp = rand(100000, 999999);
+        $otp = random_int(100000, 999999);
         $expires_at = Carbon::now()->addMinutes(1);
 
         // Hapus OTP lama

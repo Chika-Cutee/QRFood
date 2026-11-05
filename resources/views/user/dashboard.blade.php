@@ -21,7 +21,7 @@
             background-color: #F0E6D8; /* Background konten */
             min-height: 100vh;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            box-sizing: border-box; 
+            box-sizing: border-box;
             padding-bottom: 100px; /* Ruang untuk footer */
         }
         .header {

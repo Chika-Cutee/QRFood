@@ -41,7 +41,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background-color: #B91C1C; 
+            background-color: #B91C1C;
         }
         .sidebar-header img {
             width: 50px;
@@ -165,7 +165,7 @@
             </div>
             
             <nav class="sidebar-nav">
-                <center><div class="nav-heading">Menu</div></center>
+                <div class="nav-heading">Menu</div>
                 
                 <a href="{{ route('admin.laporan.index') }}" class="{{ request()->routeIs('admin.laporan.index*') ? 'active' : '' }}">Laporan Penjualan</a>
                 <a href="{{ route('admin.laporan.grafik') }}" class="{{ request()->routeIs('admin.laporan.grafik') ? 'active' : '' }}">Grafik Penjualan</a>

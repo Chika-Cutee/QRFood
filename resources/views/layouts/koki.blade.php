@@ -94,8 +94,8 @@
                 <h2>Cafe Gerai 3 Abdul</h2>
             </div>
             <nav class="sidebar-nav">
-                <center><div class="nav-heading">Menu Dapur</div></center>
-                <center><a href="{{ route('koki.dashboard') }}" class="active">Pesanan Pelanggan</a></center>
+                <div class="nav-heading">Menu Dapur</div>
+                <a href="{{ route('koki.dashboard') }}" class="active">Pesanan Pelanggan</a>
             </nav>
             <div class="sidebar-footer">
                 <form action="{{ route('logout') }}" method="POST">

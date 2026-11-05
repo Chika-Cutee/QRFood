@@ -165,7 +165,7 @@
                 <h2>Cafe Gerai 3 Abdul</h2>
             </div>
             <nav class="sidebar-nav">
-                <center><div class="nav-heading">Menu</div></center>
+                <div class="nav-heading">Menu</div>
                 
                 <a href="{{ route('kasir.dashboard') }}" 
                    class="{{ request()->routeIs('kasir.dashboard') ? 'active' : '' }}">

@@ -8,6 +8,28 @@ use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
+    /** Guard staff => nama rute dashboard tujuan. */
+    private const RUTE_STAFF = [
+        'admin' => 'admin.laporan.index',
+        'kasir' => 'kasir.dashboard',
+        'koki'  => 'koki.dashboard',
+    ];
+
+    /**
+     * [Duplikasi rutinitas] Pembentukan kredensial (email atau username) sebelumnya
+     * ditulis dua kali di staffLogin() dan login().
+     */
+    private function buatKredensial(Request $request): array
+    {
+        $loginInput = $request->input('email');
+        $field      = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+
+        return [
+            $field     => $loginInput,
+            'password' => $request->input('password'),
+        ];
+    }
+
     // Method untuk menampilkan form login staff
     public function showStaffLoginForm()
     {
@@ -23,33 +45,16 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        $loginInput = $request->input('email');
-        $passwordInput = $request->input('password');
+        $credentials = $this->buatKredensial($request);
 
-        // 2. Tentukan nama kolom (email atau name)
-        $isEmail = filter_var($loginInput, FILTER_VALIDATE_EMAIL);
-        $field = $isEmail ? 'email' : 'name';
-
-        $credentials = [
-            $field => $loginInput,
-            'password' => $passwordInput
-        ];
-        
-        $guards = ['admin', 'kasir', 'koki'];
-
-        foreach ($guards as $guard) {
+        // [Pedoman Kontrol] Loop 'for' atas daftar guard yang jumlahnya tetap (3), dan
+        // switch lama (tanpa 'default') diganti peta guard -> rute sehingga tidak ada
+        // percabangan yang bisa "jatuh" tanpa penanganan.
+        foreach (self::RUTE_STAFF as $guard => $namaRute) {
             if (Auth::guard($guard)->attempt($credentials)) {
                 $request->session()->regenerate();
 
-                // Arahkan ke dashboard yang sesuai
-                switch ($guard) {
-                    case 'admin':
-                        return redirect()->intended(route('admin.laporan.index'));
-                    case 'kasir':
-                        return redirect()->intended(route('kasir.dashboard'));
-                    case 'koki':
-                        return redirect()->intended(route('koki.dashboard'));
-                }
+                return redirect()->intended(route($namaRute));
             }
         }
 
@@ -74,18 +79,8 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        $loginInput = $request->input('email');
-        $passwordInput = $request->input('password');
+        $credentials = $this->buatKredensial($request);
 
-        // 3. Tentukan nama kolom (email atau name)
-        $isEmail = filter_var($loginInput, FILTER_VALIDATE_EMAIL);
-        $field = $isEmail ? 'email' : 'name';
-
-        $credentials = [
-            $field => $loginInput,
-            'password' => $passwordInput
-        ];
-        
         // Coba login sebagai User (pelanggan)
         if (Auth::guard('web')->attempt($credentials)) {
             $request->session()->regenerate();

@@ -6,15 +6,15 @@
     <title>Memproses Pembayaran...</title>
     <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
     <style>
-        /* Loader sederhana agar user tahu sedang proses */
-        body { 
-            font-family: Arial, sans-serif; 
-            background-color: #D4C0A0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #D4C0A0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
             flex-direction: column;
         }
         .loader {

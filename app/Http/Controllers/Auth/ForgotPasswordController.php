@@ -16,6 +16,25 @@ use Carbon\Carbon;
 
 class ForgotPasswordController extends Controller
 {
+    /** Guard => model akun. */
+    private const MODEL_GUARD = [
+        'admin' => Admin::class,
+        'kasir' => Kasir::class,
+        'web'   => User::class,
+    ];
+
+    /** Mengembalikan nama guard pemilik email, atau null bila tidak terdaftar. */
+    private function cariGuardByEmail(string $email): ?string
+    {
+        foreach (self::MODEL_GUARD as $guard => $modelClass) {
+            if ($modelClass::where('email', $email)->exists()) {
+                return $guard;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Menampilkan halaman form "lupa password" (Form Email)
      */
@@ -33,20 +52,14 @@ class ForgotPasswordController extends Controller
         $request->validate(['email' => 'required|email']);
         $email = $request->email;
 
-        // 2. Cari email di 3 tabel
-        $user = User::where('email', $email)->first() 
-             ?? Admin::where('email', $email)->first() 
-             ?? Kasir::where('email', $email)->first();
+        // 2. Cari guard pemilik email. [Efisiensi] Sebelumnya tabel yang sama di-query
+        // dua kali (first() lalu exists()); sekarang satu rutinitas, berhenti di yang pertama cocok.
+        $guard = $this->cariGuardByEmail($email);
 
         // 3. Jika tidak ditemukan sama sekali
-        if (!$user) {
+        if ($guard === null) {
             return back()->withErrors(['email' => 'Email tidak terdaftar di sistem kami.']);
         }
-        
-        // 4. Ambil guard-nya
-        $guard = 'web';
-        if (Admin::where('email', $email)->exists()) $guard = 'admin';
-        elseif (Kasir::where('email', $email)->exists()) $guard = 'kasir';
 
         // 5. Panggil logika inti pengiriman OTP
         if (!$this->_sendOtpLogic($email)) {
@@ -158,10 +171,9 @@ class ForgotPasswordController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'Sesi Anda telah habis, silakan coba lagi.']);
         }
 
-        $user = null;
-        if ($guard == 'web') $user = User::where('email', $email)->first();
-        if ($guard == 'admin') $user = Admin::where('email', $email)->first();
-        if ($guard == 'kasir') $user = Kasir::where('email', $email)->first();
+        // [Pedoman Kontrol] Tiga 'if' terpisah tanpa else diganti peta guard -> model.
+        $modelClass = self::MODEL_GUARD[$guard] ?? null;
+        $user       = $modelClass !== null ? $modelClass::where('email', $email)->first() : null;
 
         if ($user) {
             $user->password = Hash::make($request->password);
@@ -190,8 +202,9 @@ class ForgotPasswordController extends Controller
      */
     private function _sendOtpLogic($email)
     {
-        // 1. Buat 6 digit OTP
-        $otp = rand(100000, 999999);
+        // 1. Buat 6 digit OTP. [Pencegahan Cacat] random_int() aman secara kriptografis;
+        // rand() dapat diprediksi sehingga tidak layak untuk OTP.
+        $otp = random_int(100000, 999999);
 
         // 2. Simpan OTP ke database
         PasswordResetOtp::updateOrCreate(
@@ -208,8 +221,7 @@ class ForgotPasswordController extends Controller
             Mail::to($email)->send(new SendOtpMail($otp));
             return true; // Sukses
         } catch (\Exception $e) {
-            // (Opsional: Log errornya)
-            // \Log::error("Gagal kirim OTP: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Gagal kirim OTP: ' . $e->getMessage());
             return false; // Gagal
         }
     }

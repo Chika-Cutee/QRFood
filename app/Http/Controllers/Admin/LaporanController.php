@@ -6,22 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\Kasir;
 use App\Models\Transaksi;
 use App\Models\TransaksiDetail;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf; // <-- 1. IMPORT PDF FACADE
+use Illuminate\Support\Facades\DB;
 
 class LaporanController extends Controller
 {
     /**
-     * Menampilkan halaman daftar laporan (Gambar 1)
+     * Menampilkan halaman daftar laporan.
      */
     public function index()
     {
         $laporan_grup = Transaksi::where('status', 'selesai')
-            ->with('kasir') 
+            ->with('kasir')
             ->select(
-                'kasir_id', 
+                'kasir_id',
                 DB::raw('DATE(created_at) as tanggal'),
                 DB::raw('COUNT(id) as jumlah_transaksi')
             )
@@ -29,159 +28,140 @@ class LaporanController extends Controller
             ->orderBy('tanggal', 'desc')
             ->orderBy('kasir_id', 'asc')
             ->get();
-        
+
         return view('admin.laporan.index', compact('laporan_grup'));
     }
 
     /**
-     * Menampilkan halaman detail laporan (Gambar 2)
+     * Menampilkan halaman detail laporan.
      */
     public function show($kasir_id, $tanggal)
     {
-        $kasir = Kasir::find($kasir_id);
-        if (!$kasir) {
-            $kasir = new Kasir();
-            $kasir->name = '[Kasir Telah Dihapus]';
-            $kasir->id = $kasir_id;
-        }
-
-        $parsedDate = Carbon::parse($tanggal);
-
-        $transaksiIds = Transaksi::where('status', 'selesai')
-            ->where('kasir_id', $kasir_id)
-            ->whereDate('created_at', $parsedDate)
-            ->pluck('id'); 
-
-        $daftarPenjualan = TransaksiDetail::whereIn('transaksi_id', $transaksiIds)
-            ->select(
-                'nama_produk', 
-                'harga_satuan', 
-                DB::raw('SUM(jumlah) as total_jumlah'), 
-                DB::raw('SUM(subtotal) as total_subtotal')
-            )
-            ->groupBy('nama_produk', 'harga_satuan')
-            ->get();
-
-        $totalPendapatan = $daftarPenjualan->sum('total_subtotal');
-
-        return view('admin.laporan.show', compact(
-            'kasir', 
-            'tanggal',
-            'daftarPenjualan', 
-            'totalPendapatan'
-        ));
+        return view('admin.laporan.show', $this->siapkanDataLaporan($kasir_id, $tanggal));
     }
 
     /**
-     * Menghapus Laporan (Tambahan Anda)
+     * Menghapus laporan (semua transaksi selesai milik satu kasir pada satu tanggal).
      */
     public function destroy($kasir_id, $tanggal)
     {
-        $parsedDate = Carbon::parse($tanggal);
-
-        $transaksis = Transaksi::where('status', 'selesai')
+        // [Efisiensi] Sebelumnya: ambil semua model (get) lalu delete satu per satu di dalam
+        // foreach = 1 query SELECT + N query DELETE. Sekarang 1 query DELETE.
+        // Detail ikut terhapus oleh onDelete('cascade') pada migrasi transaksi_details.
+        Transaksi::where('status', 'selesai')
             ->where('kasir_id', $kasir_id)
-            ->whereDate('created_at', $parsedDate)
-            ->get();
-        
-        foreach($transaksis as $transaksi) {
-            $transaksi->delete(); 
-        }
+            ->whereDate('created_at', $this->parseTanggal($tanggal))
+            ->delete();
 
         return redirect()->route('admin.laporan.index')->with('success', 'Laporan berhasil dihapus.');
     }
 
     /**
-     * ▼▼▼ FUNGSI INI SEKARANG DIISI ▼▼▼
-     * Ekspor PDF
+     * Ekspor PDF.
      */
     public function exportPdf($kasir_id, $tanggal)
     {
-        // 1. Ambil data (Logika yang SAMA PERSIS seperti method 'show')
-        $kasir = Kasir::find($kasir_id);
-        if (!$kasir) {
-            $kasir = new Kasir();
-            $kasir->name = '[Kasir Telah Dihapus]';
-            $kasir->id = $kasir_id;
+        $data = $this->siapkanDataLaporan($kasir_id, $tanggal);
+
+        $namaFile = 'Laporan - ' . $data['kasir']->name . ' - '
+            . $this->parseTanggal($tanggal)->format('d-m-Y') . '.pdf';
+
+        return Pdf::loadView('admin.laporan.pdf', $data)->download($namaFile);
+    }
+
+    public function showGrafik()
+    {
+        $tahunSaatIni = Carbon::now()->year;
+        $tahunMulai   = $tahunSaatIni - 4; // 5 tahun terakhir
+
+        // 1. Penjualan bulanan (tahun ini)
+        $penjualanBulanan = Transaksi::select(
+            DB::raw('MONTH(created_at) as month'),
+            DB::raw('SUM(total_harga) as total')
+        )
+            ->whereYear('created_at', $tahunSaatIni)
+            ->where('status', 'selesai')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        $dataBulan = array_fill(1, 12, 0);
+        foreach ($penjualanBulanan as $data) {
+            $dataBulan[$data->month] = $data->total;
         }
 
-        $parsedDate = Carbon::parse($tanggal);
+        // 2. Penjualan tahunan (5 tahun terakhir)
+        $penjualanTahunan = Transaksi::select(
+            DB::raw('YEAR(created_at) as year'),
+            DB::raw('SUM(total_harga) as total')
+        )
+            ->where('status', 'selesai')
+            ->whereYear('created_at', '>=', $tahunMulai)
+            ->groupBy('year')
+            ->orderBy('year')
+            ->get();
 
-        $transaksiIds = Transaksi::where('status', 'selesai')
+        return view('admin.grafik_penjualan', [
+            'dataBulananJson' => json_encode(array_values($dataBulan)),
+            'labelsTahun'     => json_encode($penjualanTahunan->pluck('year')),
+            'dataTahunJson'   => json_encode($penjualanTahunan->pluck('total')),
+            'tahunSaatIni'    => $tahunSaatIni,
+        ]);
+    }
+
+    // ------------------------------------------------------------------
+    //  Rutinitas bantu (private)
+    // ------------------------------------------------------------------
+
+    /**
+     * [Komputasional - Duplikasi rutinitas] Query laporan sebelumnya ditulis dua kali
+     * persis sama (show & exportPdf). Sekarang satu rutinitas yang dipakai bersama.
+     */
+    private function siapkanDataLaporan($kasir_id, $tanggal): array
+    {
+        $kasir = Kasir::find($kasir_id);
+
+        if ($kasir === null) {
+            $kasir       = new Kasir();
+            $kasir->name = '[Kasir Telah Dihapus]';
+            $kasir->id   = $kasir_id;
+        }
+
+        // [Efisiensi] pluck('id') + whereIn(array) = 2 query & array besar di RAM.
+        // Diganti subquery -> 1 query, id tidak dimuat ke PHP.
+        $idTransaksi = Transaksi::select('id')
+            ->where('status', 'selesai')
             ->where('kasir_id', $kasir_id)
-            ->whereDate('created_at', $parsedDate)
-            ->pluck('id');
+            ->whereDate('created_at', $this->parseTanggal($tanggal));
 
-        $daftarPenjualan = TransaksiDetail::whereIn('transaksi_id', $transaksiIds)
+        $daftarPenjualan = TransaksiDetail::whereIn('transaksi_id', $idTransaksi)
             ->select(
-                'nama_produk', 
-                'harga_satuan', 
+                'nama_produk',
+                'harga_satuan',
                 DB::raw('SUM(jumlah) as total_jumlah'),
                 DB::raw('SUM(subtotal) as total_subtotal')
             )
             ->groupBy('nama_produk', 'harga_satuan')
             ->get();
 
-        $totalPendapatan = $daftarPenjualan->sum('total_subtotal');
-
-        // 2. Siapkan data untuk dikirim ke view PDF
-        $data = [
-            'kasir' => $kasir,
-            'tanggal' => $tanggal, // Kirim tanggal (string)
+        return [
+            'kasir'           => $kasir,
+            'tanggal'         => $tanggal,
             'daftarPenjualan' => $daftarPenjualan,
-            'totalPendapatan' => $totalPendapatan
+            'totalPendapatan' => $daftarPenjualan->sum('total_subtotal'),
         ];
-
-        // 3. Buat nama file
-        $namaFile = 'Laporan - ' . $kasir->name . ' - ' . $parsedDate->format('d-m-Y') . '.pdf';
-
-        // 4. Load view PDF ('admin.laporan.pdf') dan data, lalu unduh
-        $pdf = Pdf::loadView('admin.laporan.pdf', $data);
-        return $pdf->download($namaFile);
     }
 
-    public function showGrafik()
+    /**
+     * [Pencegahan Cacat] Carbon::parse() melempar exception (HTTP 500) untuk tanggal
+     * tidak valid di URL. Sekarang dijawab 404.
+     */
+    private function parseTanggal($tanggal): Carbon
     {
-        // 1. Data Penjualan Bulanan (Total Penjualan per Bulan)
-        $penjualanBulanan = Transaksi::select(
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('SUM(total_harga) as total')
-        )
-        ->whereYear('created_at', Carbon::now()->year) // Hanya ambil tahun ini
-        ->where('status', 'selesai') // Ubah ke 'selesai' agar sama dengan Laporan Harian
-        ->groupBy('month')
-        ->orderBy('month')
-        ->get();
-
-        // Format data bulanan untuk ChartJS (0 = Kosong)
-        $dataBulan = array_fill(1, 12, 0);
-        foreach ($penjualanBulanan as $data) {
-            $dataBulan[$data->month] = $data->total;
+        try {
+            return Carbon::parse($tanggal);
+        } catch (\Exception $e) {
+            abort(404, 'Format tanggal tidak valid.');
         }
-        $dataBulananJson = json_encode(array_values($dataBulan));
-
-        // 2. Data Penjualan Tahunan (Total Penjualan 5 Tahun Terakhir)
-        $tahunSaatIni = Carbon::now()->year;
-        $tahunMulai = $tahunSaatIni - 4; // Ambil 5 tahun terakhir
-
-        $penjualanTahunan = Transaksi::select(
-            DB::raw('YEAR(created_at) as year'),
-            DB::raw('SUM(total_harga) as total')
-        )
-        ->where('status', 'selesai') // Ubah ke 'selesai'
-        ->whereYear('created_at', '>=', $tahunMulai)
-        ->groupBy('year')
-        ->orderBy('year')
-        ->get();
-
-        $labelsTahun = $penjualanTahunan->pluck('year');
-        $dataTahun = $penjualanTahunan->pluck('total');
-
-        return view('admin.grafik_penjualan', [
-            'dataBulananJson' => $dataBulananJson,
-            'labelsTahun' => json_encode($labelsTahun),
-            'dataTahunJson' => json_encode($dataTahun),
-            'tahunSaatIni' => $tahunSaatIni,
-        ]);
     }
 }

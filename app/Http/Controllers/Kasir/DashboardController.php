@@ -28,14 +28,22 @@ class DashboardController extends Controller
      */
     public function konfirmasi(Transaksi $transaksi)
     {
-        $kasirId = Auth::guard('kasir')->id();
+        // [Pencegahan Cacat - if/else] Sebelumnya status tidak dicek: pesanan yang sudah
+        // diproses/selesai/batal bisa "dikonfirmasi" ulang. Sekarang hanya status yang valid.
+        if (in_array($transaksi->status, ['menunggu_pembayaran', 'dibayar'], true)) {
+            $transaksi->update([
+                'status'   => 'diproses',
+                'kasir_id' => Auth::guard('kasir')->id(),
+            ]);
 
-        $transaksi->update([
-            'status' => 'diproses',
-            'kasir_id' => $kasirId
-        ]);
-        
-        return redirect()->route('kasir.dashboard')->with('success', 'Pesanan #' . $transaksi->id . ' berhasil dikonfirmasi.');
+            $response = redirect()->route('kasir.dashboard')
+                ->with('success', 'Pesanan #' . $transaksi->id . ' berhasil dikonfirmasi.');
+        } else {
+            $response = redirect()->route('kasir.dashboard')
+                ->with('error', 'Pesanan #' . $transaksi->id . ' tidak dapat dikonfirmasi.');
+        }
+
+        return $response;
     }
 
     /**
@@ -75,31 +83,19 @@ class DashboardController extends Controller
      */
     public function showRiwayat(Request $request)
     {
-        // 1. Ambil input pencarian
-        $search = $request->input('search');
-
-        // 2. Mulai query ke tabel transaksi
+        $search       = trim((string) $request->input('search'));
         $queryBuilder = Transaksi::where('status', 'selesai');
 
-        // 3. Jika ada input pencarian (tidak kosong)
-        if ($search) {
-            // Kita akan mencari di TIGA tempat: nama, meja, atau tanggal
-            $queryBuilder->where(function ($q) use ($search) {
-                
-                // A. Cari berdasarkan Nama Pemesan
-                $q->where('nama_pemesan', 'LIKE', "%{$search}%");
-                
-                // B. Cari berdasarkan Nomor Meja
-                $q->orWhere('nomor_meja', $search);
+        if ($search !== '') {
+            // Cari di TIGA tempat: nama, meja, atau tanggal (d/m/Y)
+            $tanggal = $this->parseTanggalPencarian($search);
 
-                // C. Cari berdasarkan Tanggal (coba format d/m/Y)
-                try {
-                    // Coba ubah "12/11/2025" menjadi "2025-11-12"
-                    $formattedDate = Carbon::createFromFormat('d/m/Y', $search)->format('Y-m-d');
-                    // Cari di database yang tanggalnya sama
-                    $q->orWhereDate('created_at', $formattedDate);
-                } catch (\Exception $e) {
-                    // Jika formatnya salah (misal: "Flora"), biarkan saja
+            $queryBuilder->where(function ($q) use ($search, $tanggal) {
+                $q->where('nama_pemesan', 'LIKE', "%{$search}%")
+                  ->orWhere('nomor_meja', $search);
+
+                if ($tanggal !== null) {
+                    $q->orWhereDate('created_at', $tanggal);
                 }
             });
         }
@@ -111,6 +107,19 @@ class DashboardController extends Controller
         
         return view('kasir.riwayat', compact('transaksis_selesai'));
     }
+    /**
+     * [Pencegahan Cacat] Exception tidak lagi dipakai sebagai alur kontrol normal.
+     * Mengembalikan 'Y-m-d' bila $teks bertanggal d/m/Y yang valid, selain itu null.
+     */
+    private function parseTanggalPencarian(string $teks): ?string
+    {
+        if (!Carbon::canBeCreatedFromFormat($teks, 'd/m/Y')) {
+            return null;
+        }
+
+        return Carbon::createFromFormat('d/m/Y', $teks)->format('Y-m-d');
+    }
+
     /**
      * (BARU) Menghapus SATU riwayat transaksi
      */
